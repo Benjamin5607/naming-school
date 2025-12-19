@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Naming School</title>
   <link href="https://fonts.googleapis.com/css2?family=Anton&display=swap" rel="stylesheet">
-  <!-- Puter.js: Free AI (no key needed) -->
+  <!-- Puter.js: Free AI (no key needed) - Updated 2025 -->
   <script src="https://js.puter.com/v2/"></script>
   <style>
     body { font-family: sans-serif; text-align: center; background: #f0f0f0; padding: 20px; }
@@ -19,33 +19,31 @@
 </head>
 <body>
   <h1>Naming School 🎓</h1>
-  <p>Upload an image! AI will slap a hilarious English office joke caption on it and turn it into a sticker 😆</p>
+  <p>Upload an image! AI will generate a hilarious English office joke caption and turn it into a sticker 😆</p>
   
   <input type="file" id="imageLoader" accept="image/*">
-  <p id="loading">AI trying multiple models to cook up an epic office joke... 🤯</p>
+  <p id="loading">AI trying multiple models to create an epic office joke... 🤯</p>
   
   <canvas id="canvas" style="display:none;"></canvas>
-  <img id="preview" alt="Sticker Preview">
+  <img id="preview" src="" alt="Sticker Preview" style="display:none;">
   
   <br>
   <button id="downloadBtn" style="display:none;">Download Sticker 📥</button>
 
   <script>
-    // Priority list: fastest/reliable models first (updated for late 2025)
+    // Latest fast/reliable models first (Dec 2025 update: Grok 4.1 fast added!)
     const modelList = [
       "gpt-5-nano",
+      "x-ai/grok-4.1-fast",       // Super fast Grok!
       "gpt-4o-mini",
       "mistralai/mistral-small-3.2",
       "x-ai/grok-3-mini",
-      "x-ai/grok-4-fast:free",
       "claude-3.5-sonnet",
       "gemini-1.5-flash",
-      "openrouter:meta-llama/llama-4-maverick",
       "deepseek/deepseek-r1"
-      // Add more if needed!
     ];
 
-    // Ultimate fallback jokes (if all models fail – rare!)
+    // Fallback jokes if all else fails
     const fallbackJokes = [
       "WHEN THE MEETING COULD'VE BEEN AN EMAIL",
       "MONDAY MORNING WITHOUT COFFEE",
@@ -84,10 +82,11 @@
           
           for (const model of modelList) {
             try {
-              title = await puter.ai.chat(
-                "Generate ONE super funny, absurd English office joke meme caption in ALL CAPS. Make it relatable to office hell: endless meetings, toxic bosses, coffee addiction, Excel nightmares, printers from hell, Mondays, etc. Short, punchy, classic meme style. No explanation, just the caption!",
+              const resp = await puter.ai.chat(
+                "Generate ONE super funny, absurd English office joke meme caption in ALL CAPS. Relatable to office life: endless meetings, bosses, coffee, spreadsheets, printers, Mondays etc. Short, punchy, classic meme style. No explanation, just the caption!",
                 { model: model }
               );
+              title = resp;  // Puter.js returns string directly in many cases
               if (title && typeof title === 'string' && title.trim().length > 0) {
                 console.log(`Success with model: ${model}`);
                 break;
@@ -99,12 +98,10 @@
           
           if (!title || title.trim().length === 0) {
             title = fallbackJokes[Math.floor(Math.random() * fallbackJokes.length)];
-            console.log("Used fallback office joke");
           }
           
           loading.style.display = 'none';
           
-          // Classic meme text style
           ctx.font = 'bold ' + Math.min(canvas.width / 8, 80) + 'px Anton';
           ctx.fillStyle = 'white';
           ctx.strokeStyle = 'black';
@@ -114,14 +111,13 @@
           
           wrapText(ctx, title.toUpperCase(), canvas.width / 2, canvas.height * 0.05, canvas.width * 0.9, Math.min(canvas.width / 10, 100));
           
-          // Preview + Download
           preview.src = canvas.toDataURL('image/png');
           preview.style.display = 'block';
           downloadBtn.style.display = 'block';
           
           downloadBtn.onclick = function() {
             const link = document.createElement('a');
-            link.download = 'naming-school-office-sticker.png';
+            link.download = 'office-joke-sticker.png';
             link.href = canvas.toDataURL('image/png');
             link.click();
           };
