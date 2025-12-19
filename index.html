@@ -1,11 +1,11 @@
 <!DOCTYPE html>
-<html lang="ko">
+<html lang="en">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Naming School</title>
   <link href="https://fonts.googleapis.com/css2?family=Anton&display=swap" rel="stylesheet">
-  <!-- Puter.js: 무료 AI (키 없이 바로 사용) -->
+  <!-- Puter.js: Free AI (no key needed) -->
   <script src="https://js.puter.com/v2/"></script>
   <style>
     body { font-family: sans-serif; text-align: center; background: #f0f0f0; padding: 20px; }
@@ -19,18 +19,46 @@
 </head>
 <body>
   <h1>Naming School 🎓</h1>
-  <p>이미지 올려봐! AI가 완전 웃긴 영어 오피스 조크 제목 붙여서 스티커 만들어줄게 😆</p>
+  <p>Upload an image! AI will slap a hilarious English office joke caption on it and turn it into a sticker 😆</p>
   
   <input type="file" id="imageLoader" accept="image/*">
-  <p id="loading">AI가 사무실 헬 조크 생각 중... 🤯</p>
+  <p id="loading">AI trying multiple models to cook up an epic office joke... 🤯</p>
   
   <canvas id="canvas" style="display:none;"></canvas>
-  <img id="preview" alt="스티커 미리보기">
+  <img id="preview" alt="Sticker Preview">
   
   <br>
-  <button id="downloadBtn" style="display:none;">스티커 다운로드 📥</button>
+  <button id="downloadBtn" style="display:none;">Download Sticker 📥</button>
 
   <script>
+    // Priority list: fastest/reliable models first (updated for late 2025)
+    const modelList = [
+      "gpt-5-nano",
+      "gpt-4o-mini",
+      "mistralai/mistral-small-3.2",
+      "x-ai/grok-3-mini",
+      "x-ai/grok-4-fast:free",
+      "claude-3.5-sonnet",
+      "gemini-1.5-flash",
+      "openrouter:meta-llama/llama-4-maverick",
+      "deepseek/deepseek-r1"
+      // Add more if needed!
+    ];
+
+    // Ultimate fallback jokes (if all models fail – rare!)
+    const fallbackJokes = [
+      "WHEN THE MEETING COULD'VE BEEN AN EMAIL",
+      "MONDAY MORNING WITHOUT COFFEE",
+      "THIS SPREADSHEET IS MY LIFE NOW",
+      "PRINTER JAMMED AGAIN... SHOCKING",
+      "BOSS: 'PER MY LAST EMAIL'",
+      "REPLY ALL APOCALYPSE",
+      "COFFEE: MY ONLY COWORKER WHO UNDERSTANDS",
+      "EXCEL JUST CRASHED MY DREAMS",
+      "ZOOM BACKGROUND FAIL INCOMING",
+      "LET'S CIRCLE BACK TO THAT... FOREVER"
+    ];
+
     const canvas = document.getElementById('canvas');
     const ctx = canvas.getContext('2d');
     const preview = document.getElementById('preview');
@@ -50,44 +78,53 @@
           canvas.height = img.height;
           ctx.drawImage(img, 0, 0);
           
-          // 로딩 표시
           loading.style.display = 'block';
           
-          try {
-            // Puter.js로 영어 office joke 제목 생성
-            const title = await puter.ai.chat(
-              "Generate ONE super funny, nonsensical, absurd English office joke meme caption in ALL CAPS. It should be relatable to office life like meetings, bosses, coffee, spreadsheets, printers, Mondays, etc. Make it short, hilarious, and classic internet meme style. No explanation, just the caption only.",
-              {model: "gpt-5-nano"}  // 빠르고 좋은 무료 모델
-            );
-            
-            // 텍스트 스타일 (클래식 밈: ALL CAPS + Impact 폰트 느낌)
-            ctx.font = 'bold ' + Math.min(canvas.width / 8, 80) + 'px Anton';
-            ctx.fillStyle = 'white';
-            ctx.strokeStyle = 'black';
-            ctx.lineWidth = Math.min(canvas.width / 50, 10);
-            ctx.textAlign = 'center';
-            ctx.textBaseline = 'top';
-            
-            // 줄바꿈 처리
-            wrapText(ctx, title.toUpperCase(), canvas.width / 2, canvas.height * 0.05, canvas.width * 0.9, Math.min(canvas.width / 10, 100));
-            
-            // 미리보기 + 다운로드
-            preview.src = canvas.toDataURL('image/png');
-            preview.style.display = 'block';
-            downloadBtn.style.display = 'block';
-            
-            downloadBtn.onclick = function() {
-              const link = document.createElement('a');
-              link.download = 'naming-school-office-joke.png';
-              link.href = canvas.toDataURL('image/png');
-              link.click();
-            };
-          } catch (error) {
-            alert('AI 제목 생성 실패! 네트워크 확인하거나 새로고침 해봐 ㅠㅠ');
-            console.error(error);
-          } finally {
-            loading.style.display = 'none';
+          let title = null;
+          
+          for (const model of modelList) {
+            try {
+              title = await puter.ai.chat(
+                "Generate ONE super funny, absurd English office joke meme caption in ALL CAPS. Make it relatable to office hell: endless meetings, toxic bosses, coffee addiction, Excel nightmares, printers from hell, Mondays, etc. Short, punchy, classic meme style. No explanation, just the caption!",
+                { model: model }
+              );
+              if (title && typeof title === 'string' && title.trim().length > 0) {
+                console.log(`Success with model: ${model}`);
+                break;
+              }
+            } catch (err) {
+              console.warn(`Model ${model} failed:`, err);
+            }
           }
+          
+          if (!title || title.trim().length === 0) {
+            title = fallbackJokes[Math.floor(Math.random() * fallbackJokes.length)];
+            console.log("Used fallback office joke");
+          }
+          
+          loading.style.display = 'none';
+          
+          // Classic meme text style
+          ctx.font = 'bold ' + Math.min(canvas.width / 8, 80) + 'px Anton';
+          ctx.fillStyle = 'white';
+          ctx.strokeStyle = 'black';
+          ctx.lineWidth = Math.min(canvas.width / 50, 10);
+          ctx.textAlign = 'center';
+          ctx.textBaseline = 'top';
+          
+          wrapText(ctx, title.toUpperCase(), canvas.width / 2, canvas.height * 0.05, canvas.width * 0.9, Math.min(canvas.width / 10, 100));
+          
+          // Preview + Download
+          preview.src = canvas.toDataURL('image/png');
+          preview.style.display = 'block';
+          downloadBtn.style.display = 'block';
+          
+          downloadBtn.onclick = function() {
+            const link = document.createElement('a');
+            link.download = 'naming-school-office-sticker.png';
+            link.href = canvas.toDataURL('image/png');
+            link.click();
+          };
         };
         img.src = event.target.result;
       };
