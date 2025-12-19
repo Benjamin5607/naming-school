@@ -3,27 +3,28 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Naming School</title>
+  <title>Naming School 🎓 (Fast Version)</title>
   <link href="https://fonts.googleapis.com/css2?family=Anton&display=swap" rel="stylesheet">
-  <!-- Puter.js: Free AI (no key needed) -->
   <script src="https://js.puter.com/v2/"></script>
   <style>
     body { font-family: sans-serif; text-align: center; background: #f0f0f0; padding: 20px; }
     h1 { font-family: 'Anton', sans-serif; color: #ff4500; }
     #preview { max-width: 100%; border-radius: 20px; box-shadow: 0 10px 20px rgba(0,0,0,0.3); margin: 20px auto; }
     canvas { max-width: 100%; border-radius: 20px; }
-    button { padding: 10px 20px; font-size: 18px; margin: 10px; background: #ff4500; color: white; border: none; border-radius: 10px; }
+    button { padding: 10px 20px; font-size: 18px; margin: 10px; background: #ff4500; color: white; border: none; border-radius: 10px; cursor: pointer; }
+    button:hover { background: #e03e00; }
     input[type="file"] { margin: 20px; }
-    #loading { color: #ff4500; font-weight: bold; display: none; }
+    #loading { color: #ff4500; font-weight: bold; display: none; margin-top: 10px;}
     #regenerate { background: #333; display: none; }
+    #regenerate:hover { background: #111; }
   </style>
 </head>
 <body>
   <h1>Naming School 🎓</h1>
-  <p>Upload an image! AI (prioritizing Qwen models) will generate a hilarious English office joke caption 😆</p>
+  <p>Upload an image! AI will generate a hilarious office joke caption instantly ⚡</p>
   
   <input type="file" id="imageLoader" accept="image/*">
-  <p id="loading">AI trying Qwen and other models for an epic office joke... 🤯</p>
+  <p id="loading">AI is thinking fast... 🤯</p>
   
   <canvas id="canvas" style="display:none;"></canvas>
   <img id="preview" src="" alt="Sticker Preview" style="display:none;">
@@ -33,37 +34,24 @@
   <button id="regenerate" style="display:none;">New Joke 🔄</button>
 
   <script>
-    // Qwen models priority! (free tiers included, latest 2025 models)
+    // ✅ 최적화된 모델 리스트 (가장 빠르고 안정적인 모델만 사용)
     const modelList = [
-      "qwen/qwen3-235b-a22b",                  // Powerful Qwen3
-      "qwen/qwen3-235b-a22b:free",
-      "qwen/qwen3-14b:free",
-      "qwen/qwen2.5-72b-instruct:free",
-      "qwen/qwen2.5-72b-instruct",
-      "qwen/qwen2.5-coder-32b-instruct:free",
-      "qwen/qwen-max",
-      "qwen/qwen-plus",
-      "qwen/qwen-turbo",
-      // Other strong backups
-      "gpt-5-nano",
-      "x-ai/grok-4.1-fast",
-      "claude-3.5-sonnet",
-      "gemini-1.5-flash",
-      "deepseek/deepseek-r1"
+      "gpt-4o-mini",      // 현재 가장 빠르고 똑똑함
+      "gpt-3.5-turbo",    // 안정적인 백업
     ];
 
-    // Fallback jokes
+    // AI 실패시 즉시 보여줄 문구들 (딜레이 방지용)
     const fallbackJokes = [
       "WHEN THE MEETING COULD'VE BEEN AN EMAIL",
-      "MONDAY MORNING WITHOUT COFFEE",
-      "THIS SPREADSHEET IS MY LIFE NOW",
-      "PRINTER JAMMED AGAIN... SHOCKING",
-      "BOSS: 'PER MY LAST EMAIL'",
-      "REPLY ALL APOCALYPSE",
-      "COFFEE: MY ONLY COWORKER WHO UNDERSTANDS",
-      "EXCEL JUST CRASHED MY DREAMS",
-      "ZOOM BACKGROUND FAIL INCOMING",
-      "LET'S CIRCLE BACK TO THAT... FOREVER"
+      "MONDAY MORNING VIBES",
+      "EXCEL CRASHED AGAIN",
+      "PER MY LAST EMAIL",
+      "WAITING FOR FRIDAY",
+      "COFFEE IS MY BOSS",
+      "DEADLINE? WHAT DEADLINE?",
+      "REPLY ALL: 'THANKS'",
+      "CAMERA OFF, PAJAMAS ON",
+      "SENDING EMAILS... MENTALLY"
     ];
 
     const canvas = document.getElementById('canvas');
@@ -78,52 +66,68 @@
     async function generateCaption() {
       let title = null;
       
+      // 모델 하나씩 시도 (최대 2개만 시도하고 바로 포기)
       for (const model of modelList) {
         try {
+          console.log(`Trying model: ${model}...`);
           title = await puter.ai.chat(
-            "Generate ONE super funny, absurd English office joke meme caption in ALL CAPS. Relatable to office life: endless meetings, bosses, coffee, spreadsheets, printers, Mondays etc. Short, punchy, classic meme style. No explanation, just the caption!",
+            "Generate ONE short, funny, sarcastic English office worker meme caption. STRICTLY ALL CAPS. Examples: 'PER MY LAST EMAIL', 'DEATH BY POWERPOINT'. Just the text, nothing else.",
             { model: model }
           );
+          
           if (title && typeof title === 'string' && title.trim().length > 0) {
-            console.log(`Success with model: ${model}`);
-            return title.toUpperCase();
+            // 따옴표가 포함되어 오면 제거
+            return title.replace(/['"]/g, '').toUpperCase();
           }
         } catch (err) {
-          console.warn(`Model ${model} failed:`, err);
+          console.warn(`Model ${model} failed, switching to backup...`);
         }
       }
       
-      // Fallback
-      title = fallbackJokes[Math.floor(Math.random() * fallbackJokes.length)];
-      return title;
+      // AI가 다 실패하거나 느리면 바로 랜덤 문구 출력
+      console.log("AI failed, using fallback joke.");
+      return fallbackJokes[Math.floor(Math.random() * fallbackJokes.length)];
     }
 
     async function generateSticker(img) {
+      // 캔버스 초기화
       canvas.width = img.width;
       canvas.height = img.height;
       ctx.drawImage(img, 0, 0);
       
+      // 로딩 표시
       loading.style.display = 'block';
+      downloadBtn.style.display = 'none';
+      regenerateBtn.style.display = 'none';
+
+      // 캡션 생성
       const title = await generateCaption();
+      
+      // 로딩 종료
       loading.style.display = 'none';
       
-      ctx.font = 'bold ' + Math.min(canvas.width / 8, 80) + 'px Anton';
+      // 텍스트 스타일 설정 (Anton 폰트)
+      const fontSize = Math.min(canvas.width / 8, 100); 
+      ctx.font = 'bold ' + fontSize + 'px Anton';
       ctx.fillStyle = 'white';
       ctx.strokeStyle = 'black';
-      ctx.lineWidth = Math.min(canvas.width / 50, 10);
+      ctx.lineWidth = fontSize / 8;
       ctx.textAlign = 'center';
       ctx.textBaseline = 'top';
       
-      wrapText(ctx, title, canvas.width / 2, canvas.height * 0.05, canvas.width * 0.9, Math.min(canvas.width / 10, 100));
+      // 텍스트 그리기 (상단 중앙)
+      wrapText(ctx, title, canvas.width / 2, canvas.height * 0.05, canvas.width * 0.9, fontSize * 1.2);
       
+      // 미리보기 업데이트
       preview.src = canvas.toDataURL('image/png');
       preview.style.display = 'block';
-      downloadBtn.style.display = 'block';
-      regenerateBtn.style.display = 'block';
+      downloadBtn.style.display = 'inline-block';
+      regenerateBtn.style.display = 'inline-block';
       
+      // 다운로드 기능
       downloadBtn.onclick = () => {
         const link = document.createElement('a');
-        link.download = 'office-joke-sticker.png';
+        link.download = 'meme_sticker.png';
         link.href = canvas.toDataURL('image/png');
         link.click();
       };
@@ -150,6 +154,7 @@
       reader.readAsDataURL(file);
     });
 
+    // 텍스트 줄바꿈 함수
     function wrapText(context, text, x, y, maxWidth, lineHeight) {
       const words = text.split(' ');
       let line = '';
