@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Naming School</title>
   <link href="https://fonts.googleapis.com/css2?family=Anton&display=swap" rel="stylesheet">
-  <!-- Puter.js: Free AI (no key needed) - Updated 2025 -->
+  <!-- Puter.js: Free AI (no key needed) -->
   <script src="https://js.puter.com/v2/"></script>
   <style>
     body { font-family: sans-serif; text-align: center; background: #f0f0f0; padding: 20px; }
@@ -13,37 +13,46 @@
     #preview { max-width: 100%; border-radius: 20px; box-shadow: 0 10px 20px rgba(0,0,0,0.3); margin: 20px auto; }
     canvas { max-width: 100%; border-radius: 20px; }
     button { padding: 10px 20px; font-size: 18px; margin: 10px; background: #ff4500; color: white; border: none; border-radius: 10px; }
-    input { margin: 20px; }
+    input[type="file"] { margin: 20px; }
     #loading { color: #ff4500; font-weight: bold; display: none; }
+    #regenerate { background: #333; display: none; }
   </style>
 </head>
 <body>
   <h1>Naming School 🎓</h1>
-  <p>Upload an image! AI will generate a hilarious English office joke caption and turn it into a sticker 😆</p>
+  <p>Upload an image! AI (prioritizing Qwen models) will generate a hilarious English office joke caption 😆</p>
   
   <input type="file" id="imageLoader" accept="image/*">
-  <p id="loading">AI trying multiple models to create an epic office joke... 🤯</p>
+  <p id="loading">AI trying Qwen and other models for an epic office joke... 🤯</p>
   
   <canvas id="canvas" style="display:none;"></canvas>
   <img id="preview" src="" alt="Sticker Preview" style="display:none;">
   
   <br>
   <button id="downloadBtn" style="display:none;">Download Sticker 📥</button>
+  <button id="regenerate" style="display:none;">New Joke 🔄</button>
 
   <script>
-    // Latest fast/reliable models first (Dec 2025 update: Grok 4.1 fast added!)
+    // Qwen models priority! (free tiers included, latest 2025 models)
     const modelList = [
+      "qwen/qwen3-235b-a22b",                  // Powerful Qwen3
+      "qwen/qwen3-235b-a22b:free",
+      "qwen/qwen3-14b:free",
+      "qwen/qwen2.5-72b-instruct:free",
+      "qwen/qwen2.5-72b-instruct",
+      "qwen/qwen2.5-coder-32b-instruct:free",
+      "qwen/qwen-max",
+      "qwen/qwen-plus",
+      "qwen/qwen-turbo",
+      // Other strong backups
       "gpt-5-nano",
-      "x-ai/grok-4.1-fast",       // Super fast Grok!
-      "gpt-4o-mini",
-      "mistralai/mistral-small-3.2",
-      "x-ai/grok-3-mini",
+      "x-ai/grok-4.1-fast",
       "claude-3.5-sonnet",
       "gemini-1.5-flash",
       "deepseek/deepseek-r1"
     ];
 
-    // Fallback jokes if all else fails
+    // Fallback jokes
     const fallbackJokes = [
       "WHEN THE MEETING COULD'VE BEEN AN EMAIL",
       "MONDAY MORNING WITHOUT COFFEE",
@@ -61,66 +70,80 @@
     const ctx = canvas.getContext('2d');
     const preview = document.getElementById('preview');
     const downloadBtn = document.getElementById('downloadBtn');
+    const regenerateBtn = document.getElementById('regenerate');
     const loading = document.getElementById('loading');
 
-    document.getElementById('imageLoader').addEventListener('change', async function(e) {
+    let currentImg = null;
+
+    async function generateCaption() {
+      let title = null;
+      
+      for (const model of modelList) {
+        try {
+          title = await puter.ai.chat(
+            "Generate ONE super funny, absurd English office joke meme caption in ALL CAPS. Relatable to office life: endless meetings, bosses, coffee, spreadsheets, printers, Mondays etc. Short, punchy, classic meme style. No explanation, just the caption!",
+            { model: model }
+          );
+          if (title && typeof title === 'string' && title.trim().length > 0) {
+            console.log(`Success with model: ${model}`);
+            return title.toUpperCase();
+          }
+        } catch (err) {
+          console.warn(`Model ${model} failed:`, err);
+        }
+      }
+      
+      // Fallback
+      title = fallbackJokes[Math.floor(Math.random() * fallbackJokes.length)];
+      return title;
+    }
+
+    async function generateSticker(img) {
+      canvas.width = img.width;
+      canvas.height = img.height;
+      ctx.drawImage(img, 0, 0);
+      
+      loading.style.display = 'block';
+      const title = await generateCaption();
+      loading.style.display = 'none';
+      
+      ctx.font = 'bold ' + Math.min(canvas.width / 8, 80) + 'px Anton';
+      ctx.fillStyle = 'white';
+      ctx.strokeStyle = 'black';
+      ctx.lineWidth = Math.min(canvas.width / 50, 10);
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'top';
+      
+      wrapText(ctx, title, canvas.width / 2, canvas.height * 0.05, canvas.width * 0.9, Math.min(canvas.width / 10, 100));
+      
+      preview.src = canvas.toDataURL('image/png');
+      preview.style.display = 'block';
+      downloadBtn.style.display = 'block';
+      regenerateBtn.style.display = 'block';
+      
+      downloadBtn.onclick = () => {
+        const link = document.createElement('a');
+        link.download = 'office-joke-sticker.png';
+        link.href = canvas.toDataURL('image/png');
+        link.click();
+      };
+    }
+
+    regenerateBtn.onclick = async () => {
+      if (currentImg) generateSticker(currentImg);
+    };
+
+    document.getElementById('imageLoader').addEventListener('change', function(e) {
       if (e.target.files.length == 0) return;
       
       const file = e.target.files[0];
       const reader = new FileReader();
       
-      reader.onload = async function(event) {
+      reader.onload = function(event) {
         const img = new Image();
-        img.onload = async function() {
-          canvas.width = img.width;
-          canvas.height = img.height;
-          ctx.drawImage(img, 0, 0);
-          
-          loading.style.display = 'block';
-          
-          let title = null;
-          
-          for (const model of modelList) {
-            try {
-              const resp = await puter.ai.chat(
-                "Generate ONE super funny, absurd English office joke meme caption in ALL CAPS. Relatable to office life: endless meetings, bosses, coffee, spreadsheets, printers, Mondays etc. Short, punchy, classic meme style. No explanation, just the caption!",
-                { model: model }
-              );
-              title = resp;  // Puter.js returns string directly in many cases
-              if (title && typeof title === 'string' && title.trim().length > 0) {
-                console.log(`Success with model: ${model}`);
-                break;
-              }
-            } catch (err) {
-              console.warn(`Model ${model} failed:`, err);
-            }
-          }
-          
-          if (!title || title.trim().length === 0) {
-            title = fallbackJokes[Math.floor(Math.random() * fallbackJokes.length)];
-          }
-          
-          loading.style.display = 'none';
-          
-          ctx.font = 'bold ' + Math.min(canvas.width / 8, 80) + 'px Anton';
-          ctx.fillStyle = 'white';
-          ctx.strokeStyle = 'black';
-          ctx.lineWidth = Math.min(canvas.width / 50, 10);
-          ctx.textAlign = 'center';
-          ctx.textBaseline = 'top';
-          
-          wrapText(ctx, title.toUpperCase(), canvas.width / 2, canvas.height * 0.05, canvas.width * 0.9, Math.min(canvas.width / 10, 100));
-          
-          preview.src = canvas.toDataURL('image/png');
-          preview.style.display = 'block';
-          downloadBtn.style.display = 'block';
-          
-          downloadBtn.onclick = function() {
-            const link = document.createElement('a');
-            link.download = 'office-joke-sticker.png';
-            link.href = canvas.toDataURL('image/png');
-            link.click();
-          };
+        img.onload = function() {
+          currentImg = img;
+          generateSticker(img);
         };
         img.src = event.target.result;
       };
