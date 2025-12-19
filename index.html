@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Naming School</title>
+  <link href="https://fonts.googleapis.com/css2?family=Anton&display=swap" rel="stylesheet">
+  <!-- Puter.js 추가: 무료 AI 사용 -->
+  <script src="https://js.puter.com/v2/"></script>
+  <style>
+    body { font-family: sans-serif; text-align: center; background: #f0f0f0; padding: 20px; }
+    h1 { font-family: 'Anton', sans-serif; color: #ff4500; }
+    #preview { max-width: 100%; border-radius: 20px; box-shadow: 0 10px 20px rgba(0,0,0,0.3); margin: 20px auto; }
+    canvas { max-width: 100%; border-radius: 20px; }
+    button { padding: 10px 20px; font-size: 18px; margin: 10px; background: #ff4500; color: white; border: none; border-radius: 10px; }
+    input { margin: 20px; }
+    #loading { color: #ff4500; font-weight: bold; display: none; }
+  </style>
+</head>
+<body>
+  <h1>Naming School 🎓</h1>
+  <p>이미지 올려봐! AI가 완전 터무니없는 영어 제목 지어서 스티커 만들어줄게 😆</p>
+  
+  <input type="file" id="imageLoader" accept="image/*">
+  <p id="loading">AI가 웃긴 제목 생각 중... 🤔</p>
+  
+  <canvas id="canvas" style="display:none;"></canvas>
+  <img id="preview" alt="스티커 미리보기">
+  
+  <br>
+  <button id="downloadBtn" style="display:none;">스티커 다운로드 📥</button>
+
+  <script>
+    const canvas = document.getElementById('canvas');
+    const ctx = canvas.getContext('2d');
+    const preview = document.getElementById('preview');
+    const downloadBtn = document.getElementById('downloadBtn');
+    const loading = document.getElementById('loading');
+
+    document.getElementById('imageLoader').addEventListener('change', async function(e) {
+      if (e.target.files.length == 0) return;
+      
+      const file = e.target.files[0];
+      const reader = new FileReader();
+      
+      reader.onload = async function(event) {
+        const img = new Image();
+        img.onload = async function() {
+          canvas.width = img.width;
+          canvas.height = img.height;
+          ctx.drawImage(img, 0, 0);
+          
+          // 로딩 표시
+          loading.style.display = 'block';
+          
+          // Puter.js로 AI 제목 생성 (완전 non-sense 영어 meme caption)
+          const title = await puter.ai.chat(
+            "Generate a super funny, completely nonsensical, absurd English meme caption in ALL CAPS. Make it short and hilarious, like classic internet memes. No explanation, just the caption.",
+            {model: "gpt-5-nano"}  // 무료 모델 중 하나 (빠르고 좋음)
+          );
+          
+          loading.style.display = 'none';
+          
+          // 텍스트 스타일
+          ctx.font = 'bold ' + Math.min(canvas.width / 8, 80) + 'px Anton';
+          ctx.fillStyle = 'white';
+          ctx.strokeStyle = 'black';
+          ctx.lineWidth = Math.min(canvas.width / 50, 10);
+          ctx.textAlign = 'center';
+          ctx.textBaseline = 'top';
+          
+          // 줄바꿈 처리
+          wrapText(ctx, title.toUpperCase(), canvas.width / 2, canvas.height * 0.05, canvas.width * 0.9, Math.min(canvas.width / 10, 100));
+          
+          // 미리보기 + 다운로드
+          preview.src = canvas.toDataURL('image/png');
+          preview.style.display = 'block';
+          downloadBtn.style.display = 'block';
+          
+          downloadBtn.onclick = function() {
+            const link = document.createElement('a');
+            link.download = 'naming-school-ai-sticker.png';
+            link.href = canvas.toDataURL('image/png');
+            link.click();
+          };
+        };
+        img.src = event.target.result;
+      };
+      reader.readAsDataURL(file);
+    });
+
+    function wrapText(context, text, x, y, maxWidth, lineHeight) {
+      const words = text.split(' ');
+      let line = '';
+      let currentY = y;
+
+      for (let n = 0; n < words.length; n++) {
+        const testLine = line + words[n] + ' ';
+        const metrics = context.measureText(testLine);
+        const testWidth = metrics.width;
+        if (testWidth > maxWidth && n > 0) {
+          context.strokeText(line, x, currentY);
+          context.fillText(line, x, currentY);
+          line = words[n] + ' ';
+          currentY += lineHeight;
+        } else {
+          line = testLine;
+        }
+      }
+      context.strokeText(line, x, currentY);
+      context.fillText(line, x, currentY);
+    }
+  </script>
+</body>
+</html>
